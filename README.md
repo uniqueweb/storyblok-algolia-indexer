@@ -12,7 +12,9 @@ npm i @uniqueweb/storyblok-algolia-indexer # npm
 Initialize `storyblok-algolia-indexer` in your Node.js based serverless function
 
 ```javascript
-const algoliaIndexer = new StoryblokAlgoliaIndexer({
+import { Indexer } from '@uniqueweb/storyblok-algolia-indexer'
+
+const algoliaIndexer = new Indexer({
   algoliaAppId,
   algoliaApiAdminToken,
   algoliaIndexName,
@@ -23,4 +25,6 @@ const algoliaIndexer = new StoryblokAlgoliaIndexer({
 algoliaIndexer.setOptions({
   starts_with: 'articles/'
 })
+
+await algoliaIndexer.indexStories()
 ```

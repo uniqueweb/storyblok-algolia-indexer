@@ -17,4 +17,4 @@ jobs:
           node-version: "20"
       - uses: JS-DevTools/npm-publish@v3
         with:
-        token: ${{ secrets.NPM_TOKEN }}
+          token: ${{ secrets.NPM_TOKEN }}
