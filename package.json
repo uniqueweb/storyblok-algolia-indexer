@@ -1,0 +1,37 @@
+{
+  "name": "@uniqueweb/storyblok-algolia-indexer",
+  "version": "1.0.0",
+  "description": "Index Algolia with Storyblok content",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "author": "uniqueweb",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/uniqueweb/storyblok-algolia-indexer.git"
+  },
+  "contributors": [
+    "Maximilian Schwarz <maximilian@unique-web.de>"
+  ],
+  "scripts": {
+    "build": "tsup index.ts --format cjs,esm --dts",
+    "release": "npm run build && changeset publish",
+    "lint": "tsc"
+  },
+  "license": "MIT",
+  "keywords": [
+    "algolia",
+    "storyblok",
+    "indexer"
+  ],
+  "dependencies": {
+    "algoliasearch": "^4.12.0",
+    "storyblok-js-client": "^6.10.11"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.28.1",
+    "@types/node": "^22.14.0",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.2"
+  }
+}
