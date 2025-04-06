@@ -27,7 +27,6 @@ export class Indexer {
     });
 
     const defaultOptions: ISbStoriesParams = {
-      starts_with: '',
       per_page: 100,
       page: 1,
       version: 'published'
@@ -76,6 +75,15 @@ export class Indexer {
       console.log(`✅ Index stored with ${records.length} entries.`);
     } catch (e) {
       console.error("❌ Error indexing stories:", e);
+    }
+  }
+
+  async deleteStories(objectIds: string[]): Promise<void> {
+    try {
+      const index = this.algoliaClient.initIndex(this.config.algoliaIndexName);
+      await index.deleteObjects(objectIds);
+    } catch (e) {
+      console.error("❌ Error deleting stories:", e);
     }
   }
 }

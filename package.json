@@ -1,6 +1,6 @@
 {
   "name": "@uniqueweb/storyblok-algolia-indexer",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Index Algolia with Storyblok content",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
