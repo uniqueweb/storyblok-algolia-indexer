@@ -10,6 +10,18 @@ interface IndexerOptions {
   options?: Partial<ISbStoriesParams>
 }
 
+interface StoryblokSpace {
+  id: number
+  name: string
+  domain: string
+  version: number
+  language_codes: string[]
+}
+
+interface StoryblokSpaceResponse {
+  space: StoryblokSpace
+}
+
 export class Indexer {
   private algoliaClient: SearchClient;
   private storyblokClient: StoryblokClient;
@@ -38,6 +50,13 @@ export class Indexer {
     }
   }
 
+  private async getStoryblokCv(): Promise<number> {
+    const res = await this.storyblokClient.get('cdn/spaces/me');
+    const data = res.data as StoryblokSpaceResponse;
+
+    return data.space.version;
+  }
+
   public setOptions(newOptions: Partial<ISbStoriesParams>) {
     this.options = {
       ...this.options,
@@ -48,13 +67,14 @@ export class Indexer {
   async indexStories(): Promise<void> {
     try {
       const index = this.algoliaClient.initIndex(this.config.algoliaIndexName);
+      const cv = await this.getStoryblokCv();
 
-      const { perPage, total } = await this.storyblokClient.get('cdn/stories/', this.options);
+      const { perPage, total } = await this.storyblokClient.get('cdn/stories/', { ...this.options, cv });
       const maxPage = Math.ceil(total / perPage);
 
       const requests = [];
       for (let page = 1; page <= maxPage; page++) {
-        requests.push(this.storyblokClient.get('cdn/stories/', { ...this.options, page }));
+        requests.push(this.storyblokClient.get('cdn/stories/', {...this.options, page, cv }));
       }
 
       const responses = await Promise.all(requests);
@@ -82,6 +102,15 @@ export class Indexer {
     try {
       const index = this.algoliaClient.initIndex(this.config.algoliaIndexName);
       await index.deleteObjects(objectIds);
+    } catch (e) {
+      console.error("❌ Error deleting stories:", e);
+    }
+  }
+
+  async deleteIndex(): Promise<void> {
+    try {
+      const index = this.algoliaClient.initIndex(this.config.algoliaIndexName);
+      await index.delete();
     } catch (e) {
       console.error("❌ Error deleting stories:", e);
     }
