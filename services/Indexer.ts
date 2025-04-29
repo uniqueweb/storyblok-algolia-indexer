@@ -8,6 +8,7 @@ interface IndexerOptions {
   storyblokAccessToken: string;
   storyblokSpaceId: string;
   options?: Partial<ISbStoriesParams>
+  customFieldMapping?: FieldMapping
 }
 
 interface StoryblokSpace {
@@ -22,10 +23,15 @@ interface StoryblokSpaceResponse {
   space: StoryblokSpace
 }
 
+interface FieldMapping {
+  [targetField: string]: string
+}
+
 export class Indexer {
   private algoliaClient: SearchClient;
   private storyblokClient: StoryblokClient;
   private options: ISbStoriesParams;
+  private customFieldMapping: FieldMapping = {};
   private batchSize: number = 1000;
 
   constructor(private config: IndexerOptions) {
@@ -64,6 +70,29 @@ export class Indexer {
     };
   }
 
+  public setCustomFieldMapping(fieldMapping: FieldMapping) {
+    this.customFieldMapping = {
+      ...fieldMapping
+    };
+  }
+
+  private getNestedValue(obj: any, path: string, fallback: any = null): any {
+    return path.split('.').reduce((acc, part) => acc && acc[part], obj) ?? fallback;
+  }
+
+  private addCustomFields(
+    record: ISbStoryData,
+    fieldMapping: FieldMapping
+  ): { [key: string]: any } {
+    const customFields: { [key: string]: any } = {};
+
+    for (const [targetField, sourcePath] of Object.entries(fieldMapping)) {
+      customFields[targetField] = this.getNestedValue(record, sourcePath);
+    }
+
+    return customFields;
+  }
+
   async indexStories(): Promise<void> {
     try {
       const index = this.algoliaClient.initIndex(this.config.algoliaIndexName);
@@ -80,19 +109,33 @@ export class Indexer {
       const responses = await Promise.all(requests);
       let records: ISbStoryData[] = responses.flatMap(res => res.data.stories) || [];
 
-      records = records.map(record => ({
-        ...record,
-        objectID: record.id
+      const algoliaRecords = records.map(record => ({
+        objectID: record.id,
+        parent_id: record.parent,
+        group_id: record.group_id,
+        uuid: record.uuid,
+        name: record.name,
+        created_at: record.created_at,
+        published_at: record.published_at,
+        updated_at: record.updated_at,
+        slug: record.slug,
+        full_slug: record.full_slug,
+        is_startpage: record.is_startpage,
+        position: record.position,
+        lang: record.lang,
+        translated_slugs: record.translated_slugs,
+        alternates: record.alternates,
+        ...(this.customFieldMapping ? this.addCustomFields(record, this.customFieldMapping) : {})
       }));
 
-      for (let i = 0; i < records.length; i += this.batchSize) {
-        const batchedRecords = records.slice(i, i + this.batchSize);
+      for (let i = 0; i < algoliaRecords.length; i += this.batchSize) {
+        const batchedRecords = algoliaRecords.slice(i, i + this.batchSize);
         await index.saveObjects(batchedRecords, {
           autoGenerateObjectIDIfNotExist: false
         }).wait();
       }
 
-      console.log(`✅ Index stored with ${records.length} entries.`);
+      console.log(`✅ Index stored with ${algoliaRecords.length} entries.`);
     } catch (e) {
       console.error("❌ Error indexing stories:", e);
     }
